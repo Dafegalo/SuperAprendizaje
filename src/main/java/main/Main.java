@@ -2,12 +2,21 @@ package main;
 
 import controller.GameController;
 
-import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Bienvenido a SuperAprendizaje - Juego de Preguntas y Respuestas");
-        SwingUtilities.invokeLater(() -> {
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            // Si Nimbus no está disponible, se usa el look and feel por defecto
+        }
+        javax.swing.SwingUtilities.invokeLater(() -> {
             GameController gameController = new GameController();
             gameController.startGame();
         });

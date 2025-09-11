@@ -55,22 +55,24 @@ public class GameController {
                 opciones,
                 opciones[0]
         );
-
+        //Funciona con >= porque Math.random() puede dar 0 pero no 1, segun entendi yo
         switch (seleccion) {
             case 0: // Fácil
-                errorConfig.setErrorRate(0.5); // 50% de error
+                errorConfig.setErrorRate(0.5); // 50% de error (50% de acierto)
                 break;
             case 1: // Normal
-                errorConfig.setErrorRate(0.7); // 70% de error
+                errorConfig.setErrorRate(0.3); // 30% de error (70% de acierto)
                 break;
             case 2: // Difícil
-                errorConfig.setErrorRate(0.9); // 90% de error
+                errorConfig.setErrorRate(0.1); // 10% de error (90% de acierto)
                 break;
             default: // Si cierra el diálogo, salir
                 gameView.dispose();
                 return;
         }
+//P.P
 
+//println("Tasa de error configurada: " + errorConfig.getErrorRate());
         gameView.displayWelcomeMessage();
         game.initializeGame();
         scoreView.updateScoreDisplay(game.getPlayer().getScore(), game.getComputer().getScore());
@@ -111,7 +113,11 @@ public class GameController {
         questionView.setOptionsEnabled(false);
         Question question = game.getCurrentQuestion();
         boolean correct = question.checkAnswer(playerAnswer);
-        questionView.showResultIcon(correct);
+
+        // Colorea los botones y deja el color hasta la siguiente pregunta
+        questionView.showAnswerFeedback(playerAnswer, question.getCorrectAnswer());
+        questionView.showResultIcon(correct); // Muestra el ✔️ o ❌ en el label
+
         if (correct) {
             game.getPlayer().updateScore(10);
             gameView.displayGameStatus("¡Correcto!");
@@ -120,7 +126,7 @@ public class GameController {
         }
         scoreView.updateScoreDisplay(game.getPlayer().getScore(), game.getComputer().getScore());
 
-        // Mostrar que la computadora está pensando
+        // Mostrar que la computadora está pensando (sin cambiar botones ni iconos)
         questionView.showQuestion(question.getQuestionText() + " (La computadora está pensando...)");
 
         // Turno de la computadora después de un pequeño delay
@@ -130,26 +136,25 @@ public class GameController {
     }
 
     private void processComputerTurn(Question question) {
-        boolean computerCorrect = Math.random() > errorConfig.getErrorRate();
+        boolean computerCorrect = Math.random() >= errorConfig.getErrorRate();
 
-        // Mostrar resultado de la computadora
-        questionView.clearResultIcon();
-        questionView.showQuestion(question.getQuestionText());
-        questionView.showResultIcon(computerCorrect);
-
+        // Solo actualiza el label para mostrar el resultado de la computadora
         if (computerCorrect) {
             game.getComputer().updateScore(10);
             gameView.displayGameStatus("La computadora respondió correctamente: " + question.getCorrectAnswer());
+            questionView.showResultIcon(true); // Puedes agregar un ✔️ al label
         } else {
             gameView.displayGameStatus("La computadora falló la respuesta.");
+            questionView.showResultIcon(false); // Puedes agregar un ❌ al label
         }
         scoreView.updateScoreDisplay(game.getPlayer().getScore(), game.getComputer().getScore());
 
-        // Espera antes de pasar a la siguiente pregunta
+        // Espera antes de pasar a la siguiente pregunta y restablecer botones/colores
         Timer timer = new Timer(1500, e -> {
             if (game.hasMoreQuestions()) {
+                questionView.clearResultIcon(); // Limpia el icono del label
                 game.setCurrentQuestion(game.getRandomQuestion());
-                showCurrentQuestion();
+                showCurrentQuestion(); // Aquí sí se restablecen los botones
             } else {
                 endGame();
             }
