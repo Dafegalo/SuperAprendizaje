@@ -4,7 +4,8 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicButtonUI;
 import java.awt.*;
 
-public class QuestionView extends JPanel {
+public class 
+QuestionView extends JPanel {
     private JLabel questionLabel;
     private JButton[] optionButtons;
     private Color defaultButtonBackground;
@@ -15,6 +16,8 @@ public class QuestionView extends JPanel {
     private static final Color INCORRECT_FG = Color.WHITE;
     private static final Color DEFAULT_FG = new Color(33, 33, 33);
 
+    private String baseQuestionText = "";
+
     public QuestionView() {
         setLayout(new BorderLayout());
         questionLabel = new JLabel("Question");
@@ -22,7 +25,8 @@ public class QuestionView extends JPanel {
     }
 
     public void showQuestion(String questionText) {
-        questionLabel.setText(questionText);
+        baseQuestionText = questionText;
+        questionLabel.setText(baseQuestionText);
     }
 
     public void displayOptions(String[] options) {
@@ -99,4 +103,19 @@ public class QuestionView extends JPanel {
             }
         }
     }
+    //Html para mejor visualización
+
+    public void showFinalCorrectAnswer(String answer) {
+        questionLabel.setText("<html>Respuesta correcta: <span style='color:green; font-weight:bold;'>" +
+                answer + "</span></html>");
+    }
+
+    public void showResultIcons(Boolean playerCorrect, Boolean computerCorrect) {
+    StringBuilder sb = new StringBuilder(baseQuestionText);
+    sb.append("  |  Jugador: ");
+    sb.append(playerCorrect == null ? "?" : (playerCorrect ? "✔️" : "❌"));
+    sb.append("  |  Computadora: ");
+    sb.append(computerCorrect == null ? "?" : (computerCorrect ? "✔️" : "❌"));
+    questionLabel.setText(sb.toString());
+}
 }

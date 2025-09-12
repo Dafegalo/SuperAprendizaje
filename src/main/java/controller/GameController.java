@@ -20,6 +20,9 @@ public class GameController {
     private ScoreView scoreView;
     private ErrorProbabilityConfig errorConfig;
 
+    private Boolean lastPlayerCorrect = null;
+    private Boolean lastComputerCorrect = null;
+
     public GameController() {
         Player player = new Player("Jugador");
         Player computer = new Player("Computadora");
@@ -27,23 +30,23 @@ public class GameController {
 
         this.gameView = new GameView();
         this.questionView = new QuestionView();
-        this.scoreView = new ScoreView();
 
-        // Configura la ventana principal
-        gameView.setLayout(new BorderLayout());
-        gameView.add(scoreView, BorderLayout.NORTH);
-        gameView.add(questionView, BorderLayout.CENTER);
+        // Usa el nuevo método para agregar el QuestionView al centro
+        gameView.setQuestionView(questionView);
+
         gameView.setVisible(true);
 
-        // Inicializa con dificultad por defecto (se ajusta antes de cada partida)
         this.errorConfig = new ErrorProbabilityConfig(0.5);
     }
 
     public void startGame() {
+        gameView.clearMessages();
+        gameView.displayWelcomeMessage();
         selectDifficultyAndStart();
     }
 
     private void selectDifficultyAndStart() {
+        gameView.displayGameStatus("Por favor, selecciona la dificultad para comenzar.");
         String[] opciones = {"Fácil", "Normal", "Difícil"};
         int seleccion = JOptionPane.showOptionDialog(
                 gameView,
@@ -55,28 +58,21 @@ public class GameController {
                 opciones,
                 opciones[0]
         );
-        //Funciona con >= porque Math.random() puede dar 0 pero no 1, segun entendi yo
         switch (seleccion) {
-            case 0: // Fácil
-                errorConfig.setErrorRate(0.5); // 50% de error (50% de acierto)
-                break;
-            case 1: // Normal
-                errorConfig.setErrorRate(0.3); // 30% de error (70% de acierto)
-                break;
-            case 2: // Difícil
-                errorConfig.setErrorRate(0.1); // 10% de error (90% de acierto)
-                break;
-            default: // Si cierra el diálogo, salir
-                gameView.dispose();
-                return;
+            case 0: errorConfig.setErrorRate(0.5); break; //Falla 50% de las veces
+            case 1: errorConfig.setErrorRate(0.3); break; //Falla 30% de las veces
+            case 2: errorConfig.setErrorRate(0.1); break; //Falla 10% de las veces
+            default: gameView.dispose(); return;
         }
-//P.P
-
-//println("Tasa de error configurada: " + errorConfig.getErrorRate());
+        gameView.clearMessages();
         gameView.displayWelcomeMessage();
         game.initializeGame();
-        scoreView.updateScoreDisplay(game.getPlayer().getScore(), game.getComputer().getScore());
+        updateScoreView();
         showCurrentQuestion();
+    }
+
+    private void updateScoreView() {
+        gameView.updateScore(game.getPlayer().getScore(), game.getComputer().getScore());
     }
 
     private void showCurrentQuestion() {
@@ -86,25 +82,18 @@ public class GameController {
             questionView.showQuestion(question.getQuestionText());
             questionView.displayOptions(question.getOptions());
             questionView.setOptionsEnabled(true);
+            questionView.showResultIcons(null, null); // Limpia iconos
 
-            // Quita listeners anteriores
             for (JButton btn : questionView.getOptionButtons()) {
                 for (ActionListener al : btn.getActionListeners()) {
                     btn.removeActionListener(al);
                 }
             }
-
-            // Agrega listeners a los botones de opciones
             JButton[] optionButtons = questionView.getOptionButtons();
             String[] options = question.getOptions();
             for (int i = 0; i < optionButtons.length; i++) {
                 final String selectedAnswer = options[i];
-                optionButtons[i].addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        processPlayerTurn(selectedAnswer);
-                    }
-                });
+                optionButtons[i].addActionListener(e -> processPlayerTurn(selectedAnswer));
             }
         }
     }
@@ -113,10 +102,10 @@ public class GameController {
         questionView.setOptionsEnabled(false);
         Question question = game.getCurrentQuestion();
         boolean correct = question.checkAnswer(playerAnswer);
+        lastPlayerCorrect = correct;
 
-        // Colorea los botones y deja el color hasta la siguiente pregunta
         questionView.showAnswerFeedback(playerAnswer, question.getCorrectAnswer());
-        questionView.showResultIcon(correct); // Muestra el ✔️ o ❌ en el label
+        questionView.showResultIcons(lastPlayerCorrect, lastComputerCorrect);
 
         if (correct) {
             game.getPlayer().updateScore(10);
@@ -124,12 +113,12 @@ public class GameController {
         } else {
             gameView.displayGameStatus("Incorrecto. La respuesta correcta era: " + question.getCorrectAnswer());
         }
-        scoreView.updateScoreDisplay(game.getPlayer().getScore(), game.getComputer().getScore());
+        updateScoreView();
 
-        // Mostrar que la computadora está pensando (sin cambiar botones ni iconos)
-        questionView.showQuestion(question.getQuestionText() + " (La computadora está pensando...)");
+        if (game.hasMoreQuestions()) {
+            gameView.displayGameStatus("La computadora está pensando...");
+        }
 
-        // Turno de la computadora después de un pequeño delay
         Timer timer = new Timer(1500, e -> processComputerTurn(question));
         timer.setRepeats(false);
         timer.start();
@@ -137,24 +126,24 @@ public class GameController {
 
     private void processComputerTurn(Question question) {
         boolean computerCorrect = Math.random() >= errorConfig.getErrorRate();
+        lastComputerCorrect = computerCorrect;
 
-        // Solo actualiza el label para mostrar el resultado de la computadora
         if (computerCorrect) {
             game.getComputer().updateScore(10);
             gameView.displayGameStatus("La computadora respondió correctamente: " + question.getCorrectAnswer());
-            questionView.showResultIcon(true); // Puedes agregar un ✔️ al label
         } else {
             gameView.displayGameStatus("La computadora falló la respuesta.");
-            questionView.showResultIcon(false); // Puedes agregar un ❌ al label
         }
-        scoreView.updateScoreDisplay(game.getPlayer().getScore(), game.getComputer().getScore());
+        questionView.showResultIcons(lastPlayerCorrect, lastComputerCorrect);
+        updateScoreView();
 
-        // Espera antes de pasar a la siguiente pregunta y restablecer botones/colores
         Timer timer = new Timer(1500, e -> {
             if (game.hasMoreQuestions()) {
-                questionView.clearResultIcon(); // Limpia el icono del label
+                lastPlayerCorrect = null;
+                lastComputerCorrect = null;
+                questionView.clearResultIcon();
                 game.setCurrentQuestion(game.getRandomQuestion());
-                showCurrentQuestion(); // Aquí sí se restablecen los botones
+                showCurrentQuestion();
             } else {
                 endGame();
             }
@@ -168,9 +157,26 @@ public class GameController {
                 game.getPlayer().getName() + ": " + game.getPlayer().getScore() + "\n" +
                 game.getComputer().getName() + ": " + game.getComputer().getScore();
 
+        String ganador;
+        if (game.getPlayer().getScore() > game.getComputer().getScore()) {
+            ganador = "¡" + game.getPlayer().getName() + " es el ganador!";
+        } else if (game.getPlayer().getScore() < game.getComputer().getScore()) {
+            ganador = "¡" + game.getComputer().getName() + " es el ganador!";
+        } else {
+            ganador = "¡Empate!";
+        }
+
+        gameView.displayWinner(ganador);
+
+        // Mostrar la respuesta correcta en el label de la pregunta (si hay una pregunta actual)
+        Question lastQuestion = game.getCurrentQuestion();
+        if (lastQuestion != null) {
+            questionView.showFinalCorrectAnswer(lastQuestion.getCorrectAnswer());
+        }
+
         int opcion = JOptionPane.showOptionDialog(
                 gameView,
-                mensajeFinal + "\n¿Quieres volver a jugar?",
+                mensajeFinal + "\n" + ganador + "\n¿Quieres volver a jugar?",
                 "Fin del juego",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.INFORMATION_MESSAGE,
@@ -181,7 +187,7 @@ public class GameController {
 
         if (opcion == JOptionPane.YES_OPTION) {
             game.resetGame();
-            selectDifficultyAndStart();
+            startGame();
         } else {
             gameView.dispose();
         }
