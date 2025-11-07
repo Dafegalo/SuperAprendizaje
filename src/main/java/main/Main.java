@@ -13,9 +13,7 @@ public class Main {
                     break;
                 }
             }
-        } catch (Exception e) {
-            // Si Nimbus no está disponible, se usa el look and feel por defecto
-        }
+        } catch (Exception ignored) { }
         javax.swing.SwingUtilities.invokeLater(() -> {
             GameController gameController = new GameController();
             gameController.startGame();

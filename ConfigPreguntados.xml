@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch4jConfig>
+  <dontWrapJar>false</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>C:\Users\felip\Desktop\SuperPreguntados\SuperAprendizaje\target\SuperAprendizaje-1.0-SNAPSHOT.jar</jar>
+  <outfile>C:\Users\felip\Desktop\SuperPreguntados\SuperAprendizaje\SuperAprendizaje.exe</outfile>
+  <errTitle></errTitle>
+  <cmdLine></cmdLine>
+  <chdir>.</chdir>
+  <priority>normal</priority>
+  <downloadUrl></downloadUrl>
+  <supportUrl></supportUrl>
+  <stayAlive>false</stayAlive>
+  <restartOnCrash>false</restartOnCrash>
+  <manifest></manifest>
+  <icon></icon>
+  <classPath>
+    <mainClass>main.Main</mainClass>
+    <cp>SuperAprendizaje-1.0-SNAPSHOT</cp>
+  </classPath>
+  <jre>
+    <path>jdk</path>
+    <requiresJdk>false</requiresJdk>
+    <requires64Bit>false</requires64Bit>
+    <minVersion></minVersion>
+    <maxVersion></maxVersion>
+  </jre>
+</launch4jConfig>
